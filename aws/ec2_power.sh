@@ -37,7 +37,8 @@ if [ -d ~/.aws ]; then
             new_list="$sorted_profiles"
         fi
 
-        # Create the final list
+        # Create the new final list and
+        # add "default" as a first element if default was present
         final_list=()
         if [ -n "$default_present" ]; then
             final_list+=("default")
@@ -48,20 +49,28 @@ if [ -d ~/.aws ]; then
             final_list+=("$profile")
         done
 
+        # Create an array with the sorted profiles
+        sorted_profiles_array=("${final_list[@]}")
+
         echo "Available AWS profiles:"
         counter=1
-        printf "%s\n" "${final_list[@]}" | while IFS= read -r profile; do
+        for profile in "${sorted_profiles_array[@]}"; do
             echo "$counter. $profile"
             counter=$((counter + 1))
         done
 
         read -r -p "Enter the number corresponding to the profile you want to use: " profile_number
 
-        # Get the selected profile name
-        selected_profile=$(echo "$sorted_profiles" | sed -n "${profile_number}p")
+        # Check if the selected number is valid
+        if [ "$profile_number" -ge 1 ] && [ "$profile_number" -le "${#sorted_profiles_array[@]}" ]; then
+            # Get the selected profile name from the array
+            selected_profile="${sorted_profiles_array[$((profile_number - 1))]}"
 
-        # Set the selected profile
-        export AWS_PROFILE="$selected_profile"
+            # Set the selected profile
+            export AWS_PROFILE="$selected_profile"
+        else
+            echo "Invalid profile number selected."
+        fi
     fi
 else
     echo "AWS configuration directory not found."
